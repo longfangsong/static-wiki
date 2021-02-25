@@ -1,10 +1,9 @@
 mod markdown;
 
-use crate::markdown::Markdown;
-use fs_extra::dir;
+use crate::markdown::{Markdown, SearchIndex};
 use std::fs;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
@@ -22,44 +21,42 @@ struct Opt {
     output: PathBuf,
 }
 
-fn main() {
-    let opt = Opt::from_args();
-    fs::remove_dir_all(&opt.output).unwrap_or(());
-    fs::create_dir_all(&opt.output).unwrap();
-    let mut search_indexes = vec![];
-    for entry in fs::read_dir(opt.input).unwrap().into_iter() {
+fn translate_dir<T1, T2>(dir: PathBuf, base_path: T1, output_base_path: T2) -> Vec<SearchIndex>
+where
+    T1: AsRef<Path>,
+    T2: AsRef<Path>,
+{
+    let mut search_indexes = Vec::new();
+    for entry in fs::read_dir(dir).unwrap().into_iter() {
         let entry = entry.unwrap();
-        if entry.file_name() == ".DS_Store" {
+        let path = entry.path().clone();
+        if path.file_name().unwrap() == ".DS_Store" {
             // fuck you, macOS!
             continue;
-        }
-        if entry.metadata().unwrap().is_file() && entry.path().extension().unwrap() == "md" {
-            let mut destination_filename = entry.path();
-            destination_filename.set_extension("htmlpart");
-            let destination_filename = destination_filename.file_name().unwrap();
-            let destination_path = opt.output.join(&destination_filename);
-            let input_file = fs::File::open(entry.path()).unwrap();
+        } else if entry.metadata().unwrap().is_file() && path.extension().unwrap() == "md" {
+            let relative_path = path.strip_prefix(&base_path).unwrap();
+            let mut destination_path = output_base_path.as_ref().join(relative_path);
+            fs::create_dir_all(destination_path.parent().unwrap()).unwrap();
+            destination_path.set_extension("htmlpart");
+            let input_file = fs::File::open(&path).unwrap();
             let mut output_file = fs::File::create(destination_path).unwrap();
-            let markdown = Markdown::from_file(
-                input_file,
-                entry.path().file_stem().unwrap().to_str().unwrap(),
-            )
-            .unwrap();
-            search_indexes.push(markdown.search_index());
+            let markdown =
+                Markdown::from_file(input_file, relative_path.to_str().unwrap()).unwrap();
             output_file.write_all(markdown.html().as_bytes()).unwrap();
-        } else if entry.metadata().unwrap().is_file() {
-            let destination_path = opt.output.join(entry.file_name());
-            fs::copy(entry.path(), destination_path).unwrap();
-        } else {
-            let destination_path = opt.output.join(entry.file_name());
-            let config = dir::CopyOptions {
-                overwrite: true,
-                copy_inside: true,
-                ..Default::default()
-            };
-            dir::copy(entry.path(), destination_path, &config).unwrap();
+            search_indexes.push(markdown.search_index());
+        } else if entry.metadata().unwrap().is_dir() {
+            let mut sub_entry_result =
+                translate_dir(path.clone(), base_path.as_ref(), output_base_path.as_ref());
+            search_indexes.append(&mut sub_entry_result);
         }
     }
+    search_indexes
+}
+
+fn main() {
+    let opt = Opt::from_args();
+    let output = opt.output.clone();
+    let search_indexes = translate_dir(opt.input.clone(), opt.input.clone(), output);
     let index_file = fs::File::create(opt.output.join("index.json")).unwrap();
     serde_json::to_writer(index_file, &search_indexes).unwrap();
 }

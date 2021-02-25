@@ -29,11 +29,11 @@ pub struct SearchIndex {
     #[serde(default)]
     aliases: Vec<String>,
     content_for_search: String,
-    filename: String,
+    path: String,
 }
 
 pub struct Markdown {
-    filename: String,
+    path: String,
     header: Header,
     content: String,
 }
@@ -60,7 +60,7 @@ impl Markdown {
             .join("");
         SearchIndex {
             name,
-            filename: self.filename.clone(),
+            path: self.path.clone(),
             aliases: self.header.aliases.clone(),
             content_for_search,
         }
@@ -73,20 +73,20 @@ impl Markdown {
         html::push_html(&mut html_output, self.parser());
         html_output
     }
-    pub fn from_str(content: &str, filename: &str) -> Self {
+    pub fn from_str(content: &str, path: &str) -> Self {
         let mut iter = content.splitn(3, "---");
         assert_eq!(iter.next(), Some(""));
         let (header_str, content) = (iter.next().unwrap(), iter.next().unwrap());
         let header = serde_yaml::from_str(header_str).unwrap();
         Self {
-            filename: filename.to_string(),
+            path: path.to_string(),
             header,
             content: content.to_string(),
         }
     }
-    pub fn from_file(mut file: File, filename: &str) -> io::Result<Self> {
+    pub fn from_file(mut file: File, relative_path: &str) -> io::Result<Self> {
         let mut content = String::new();
         file.read_to_string(&mut content)?;
-        Ok(Self::from_str(&content, filename))
+        Ok(Self::from_str(&content, relative_path))
     }
 }
