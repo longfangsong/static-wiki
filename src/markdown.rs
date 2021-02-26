@@ -78,8 +78,10 @@ impl Markdown {
         assert_eq!(iter.next(), Some(""));
         let (header_str, content) = (iter.next().unwrap(), iter.next().unwrap());
         let header = serde_yaml::from_str(header_str).unwrap();
+        let mut path = path.strip_suffix(".md").unwrap().to_string();
+        path.push_str(".htmlpart");
         Self {
-            path: path.to_string(),
+            path,
             header,
             content: content.to_string(),
         }
