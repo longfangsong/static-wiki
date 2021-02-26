@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io;
 use std::io::Read;
-
+use urlencoding::encode;
 lazy_static! {
     static ref OPTIONS: Options = {
         let mut options = Options::empty();
@@ -60,7 +60,7 @@ impl Markdown {
             .join("");
         SearchIndex {
             name,
-            path: self.path.clone(),
+            path: encode(&self.path),
             aliases: self.header.aliases.clone(),
             content_for_search,
         }
