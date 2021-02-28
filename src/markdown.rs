@@ -1,10 +1,9 @@
 use lazy_static::lazy_static;
 use pulldown_cmark::{html, Event, Options, Parser};
 use serde::{Deserialize, Serialize};
-use std::fs::File;
-use std::io;
-use std::io::Read;
+use std::{fs::File, io, io::Read};
 use urlencoding::encode;
+
 lazy_static! {
     static ref OPTIONS: Options = {
         let mut options = Options::empty();

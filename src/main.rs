@@ -1,9 +1,11 @@
 mod markdown;
 
 use crate::markdown::{Markdown, SearchIndex};
-use std::fs;
-use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::{
+    fs,
+    io::Write,
+    path::{Path, PathBuf},
+};
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
