@@ -2,13 +2,26 @@ name: Build & Release
 
 on: push
 jobs:
-  release-docker:
+  release-md-translator:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Build the Docker image
+        working-directory: ./md_translator
         run: |
-          docker build . -t static-wiki
-          docker tag static-wiki ${{ secrets.DOCKER_USERNAME }}/static-wiki:latest
+          docker build . -t md-translator
+          docker tag md-translator ${{ secrets.DOCKER_USERNAME }}/md-translator:latest
           echo "${{ secrets.DOCKER_PASSWORD }}" | docker login --username "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-          docker push ${{ secrets.DOCKER_USERNAME }}/static-wiki
+          docker push ${{ secrets.DOCKER_USERNAME }}/md-translator
+
+  release-github-wiki-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build the Docker image
+        working-directory: ./github_wiki_bot
+        run: |
+          docker build . -t github-wiki-bot
+          docker tag github-wiki-bot ${{ secrets.DOCKER_USERNAME }}/github-wiki-bot:latest
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login --username "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+          docker push ${{ secrets.DOCKER_USERNAME }}/github-wiki-bot

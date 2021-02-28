@@ -1,13 +1,10 @@
 [package]
-name = "static-wiki"
+name = "github_wiki_bot"
 version = "0.1.0"
 authors = ["longfangsong <longfangsong@icloud.com>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[workspace]
-members = [
-    "md_translator",
-    "github_wiki_bot"
-]
+[dependencies]
+baipiao-bot-rust = "0.1.1"
