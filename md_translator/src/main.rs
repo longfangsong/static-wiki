@@ -1,12 +1,14 @@
-mod markdown;
-
-use crate::markdown::{Markdown, SearchIndex};
 use std::{
     fs,
     io::Write,
     path::{Path, PathBuf},
 };
+
 use structopt::StructOpt;
+
+use crate::markdown::{ContentFile, IndexFile, Markdown, SearchIndex};
+
+mod markdown;
 
 #[derive(Debug, StructOpt)]
 #[structopt(
@@ -42,10 +44,21 @@ where
             destination_path.set_extension("htmlpart");
             let input_file = fs::File::open(&path).unwrap();
             let mut output_file = fs::File::create(destination_path).unwrap();
-            let markdown =
-                Markdown::from_file(input_file, relative_path.to_str().unwrap()).unwrap();
-            output_file.write_all(markdown.html().as_bytes()).unwrap();
-            search_indexes.push(markdown.search_index());
+            if entry.file_name() == "index.md" {
+                let markdown =
+                    IndexFile::from_file(input_file, relative_path.to_str().unwrap()).unwrap();
+                output_file.write_all(markdown.html().as_bytes()).unwrap();
+            } else {
+                let markdown =
+                    ContentFile::from_file(input_file, relative_path.to_str().unwrap()).unwrap();
+                output_file.write_all(markdown.html().as_bytes()).unwrap();
+                search_indexes.push(markdown.search_index());
+            }
+        } else if entry.metadata().unwrap().is_file() {
+            let relative_path = path.strip_prefix(&base_path).unwrap();
+            let destination_path = output_base_path.as_ref().join(relative_path);
+            fs::create_dir_all(destination_path.parent().unwrap()).unwrap();
+            fs::copy(path, destination_path).unwrap();
         } else if entry.metadata().unwrap().is_dir() {
             let mut sub_entry_result =
                 translate_dir(path.clone(), base_path.as_ref(), output_base_path.as_ref());

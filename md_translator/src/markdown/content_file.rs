@@ -1,18 +1,8 @@
-use lazy_static::lazy_static;
-use pulldown_cmark::{html, Event, Options, Parser};
+use crate::markdown::Markdown;
+use pulldown_cmark::Event;
 use serde::{Deserialize, Serialize};
 use std::{fs::File, io, io::Read};
 use urlencoding::encode;
-
-lazy_static! {
-    static ref OPTIONS: Options = {
-        let mut options = Options::empty();
-        options.insert(Options::ENABLE_STRIKETHROUGH);
-        options.insert(Options::ENABLE_TABLES);
-        options.insert(Options::ENABLE_FOOTNOTES);
-        options
-    };
-}
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 struct Header {
@@ -31,13 +21,23 @@ pub struct SearchIndex {
     path: String,
 }
 
-pub struct Markdown {
+pub struct ContentFile {
     path: String,
     header: Header,
     content: String,
 }
 
-impl Markdown {
+impl Markdown for ContentFile {
+    fn content(&self) -> &str {
+        &self.content
+    }
+
+    fn path(&self) -> &str {
+        &self.path
+    }
+}
+
+impl ContentFile {
     pub fn search_index(&self) -> SearchIndex {
         let mut parser = self.parser();
         let name = parser.find(|it| matches!(it, Event::Text(_))).unwrap();
@@ -64,15 +64,8 @@ impl Markdown {
             content_for_search,
         }
     }
-    fn parser(&self) -> Parser {
-        Parser::new_ext(&self.content, *OPTIONS)
-    }
-    pub fn html(&self) -> String {
-        let mut html_output = String::new();
-        html::push_html(&mut html_output, self.parser());
-        html_output
-    }
-    pub fn from_str(content: &str, path: &str) -> Self {
+
+    fn from_str(content: &str, path: &str) -> Self {
         let mut iter = content.splitn(3, "---");
         assert_eq!(iter.next(), Some(""));
         let (header_str, content) = (iter.next().unwrap(), iter.next().unwrap());
