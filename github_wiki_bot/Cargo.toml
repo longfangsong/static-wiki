@@ -8,3 +8,10 @@ edition = "2018"
 
 [dependencies]
 baipiao-bot-rust = "0.1.1"
+octocrab = "0.8.11"
+simpler-git = "0.1.0"
+tokio = { version = "1.2.0", features = ["macros", "rt-multi-thread"] }
+async-trait = "0.1.42"
+log = "0.4.14"
+env_logger = "0.8.3"
+serde_json = "1.0.64"
