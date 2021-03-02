@@ -1,8 +1,6 @@
 use crate::markdown::Markdown;
 use serde::{Deserialize, Serialize};
-use std::fs::File;
-use std::io;
-use std::io::Read;
+use std::{fs::File, io, io::Read};
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct IndexFile {

@@ -2,11 +2,12 @@ use async_trait::async_trait;
 use baipiao_bot_rust::{Bot, Dispatcher, IssueCreatedEvent, Repository};
 use log::info;
 use octocrab::{models, params, Octocrab, OctocrabBuilder};
-use simpler_git::git2::{Cred, Signature};
-use simpler_git::{git2, GitHubRepository};
-use std::fs::File;
-use std::io::Write;
-use std::{env, fs};
+use simpler_git::{
+    git2,
+    git2::{Cred, Signature},
+    GitHubRepository,
+};
+use std::{env, fs, fs::File, io::Write};
 
 struct StaticWikiBot {
     github_client: Octocrab,
@@ -26,9 +27,12 @@ impl StaticWikiBot {
         &self,
         repo_info: &Repository,
         branch_name: &str,
+        language: &str,
+        answer: &str,
         filename: &str,
         content: &str,
     ) -> Result<(), git2::Error> {
+        info!("try to add file {}/{}/{}", language, answer, content);
         let github_repo = GitHubRepository {
             owner: repo_info.owner.clone(),
             name: repo_info.name.clone(),
@@ -47,9 +51,16 @@ impl StaticWikiBot {
                 }),
             )?;
         }
-        fs::create_dir_all(format!("./{}/data/zh/what/", repo_info.name)).unwrap();
-        let mut file =
-            File::create(format!("./{}/data/zh/what/{}", repo_info.name, filename)).unwrap();
+        fs::create_dir_all(format!(
+            "./{}/data/{}/{}/",
+            repo_info.name, language, answer
+        ))
+        .unwrap();
+        let mut file = File::create(format!(
+            "./{}/data/{}/{}/{}",
+            repo_info.name, language, answer, filename
+        ))
+        .unwrap();
         file.write_all(content.as_bytes()).unwrap();
         drop(file);
         let tree_id = repo.add_all()?;
@@ -110,9 +121,26 @@ impl Bot for StaticWikiBot {
             info!("Contribute issue created with title {}", event.title);
             let title = event.title.strip_prefix("[Contribute] ").unwrap();
             let content_start = event.body.find("---").unwrap();
-            let content = &event.body[content_start..];
-            self.save_file_and_push(&repo, "main", &format!("{}.md", title), content)
+            let mut meta = event.body[..content_start].split("\n").map(|it| it.trim());
+            let language = meta
+                .clone()
+                .find(|it| it.starts_with("language:"))
+                .map(|it| it.trim_start_matches("language:").trim())
                 .unwrap();
+            let answer = meta
+                .find(|it| it.starts_with("answer:"))
+                .map(|it| it.trim_start_matches("answer:").trim())
+                .unwrap();
+            let content = &event.body[content_start..];
+            self.save_file_and_push(
+                &repo,
+                "main",
+                language,
+                answer,
+                &format!("{}.md", title),
+                content,
+            )
+            .unwrap();
             info!("File saved and pushed {}", event.title);
             self.comment(&repo, event.id, "Merged").await;
             self.close_issue(&repo, event.id).await;
