@@ -7,7 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-baipiao-bot-rust = "0.1.1"
+baipiao-bot-rust = "0.1.2"
 octocrab = "0.8.11"
 simpler-git = "0.1.0"
 tokio = { version = "1.2.0", features = ["macros", "rt-multi-thread"] }

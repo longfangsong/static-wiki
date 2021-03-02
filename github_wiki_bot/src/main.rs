@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use baipiao_bot_rust::{Bot, Dispatcher, IssueCreatedEvent, Repository};
+use baipiao_bot_rust::{Bot, Dispatcher, IssueCreatedEvent, IssueReopenedEvent, Repository};
 use log::info;
 use octocrab::{models, params, Octocrab, OctocrabBuilder};
 use simpler_git::{
@@ -112,38 +112,50 @@ impl StaticWikiBot {
             .await
             .unwrap();
     }
+
+    async fn handle_contribute_issue(&self, repo: Repository, id: usize, title: &str, body: &str) {
+        info!("Contribute issue created with title {}", title);
+        let title = title.strip_prefix("[Contribute] ").unwrap();
+        let content_start = body.find("---").unwrap();
+        let mut meta = body[..content_start].split("\n").map(|it| it.trim());
+        let language = meta
+            .clone()
+            .find(|it| it.starts_with("language:"))
+            .map(|it| it.trim_start_matches("language:").trim())
+            .unwrap();
+        let answer = meta
+            .find(|it| it.starts_with("answer:"))
+            .map(|it| it.trim_start_matches("answer:").trim())
+            .unwrap();
+        let content = &body[content_start..];
+        self.save_file_and_push(
+            &repo,
+            "main",
+            language,
+            answer,
+            &format!("{}.md", title),
+            content,
+        )
+        .unwrap();
+        info!("File saved and pushed {}", title);
+        self.comment(&repo, id, "Merged").await;
+        self.close_issue(&repo, id).await;
+    }
 }
 
 #[async_trait]
 impl Bot for StaticWikiBot {
     async fn on_issue_created(&self, repo: Repository, event: IssueCreatedEvent) {
         if event.title.starts_with("[Contribute]") {
-            info!("Contribute issue created with title {}", event.title);
-            let title = event.title.strip_prefix("[Contribute] ").unwrap();
-            let content_start = event.body.find("---").unwrap();
-            let mut meta = event.body[..content_start].split("\n").map(|it| it.trim());
-            let language = meta
-                .clone()
-                .find(|it| it.starts_with("language:"))
-                .map(|it| it.trim_start_matches("language:").trim())
-                .unwrap();
-            let answer = meta
-                .find(|it| it.starts_with("answer:"))
-                .map(|it| it.trim_start_matches("answer:").trim())
-                .unwrap();
-            let content = &event.body[content_start..];
-            self.save_file_and_push(
-                &repo,
-                "main",
-                language,
-                answer,
-                &format!("{}.md", title),
-                content,
-            )
-            .unwrap();
-            info!("File saved and pushed {}", event.title);
-            self.comment(&repo, event.id, "Merged").await;
-            self.close_issue(&repo, event.id).await;
+            self.handle_contribute_issue(repo, event.id, &event.title, &event.body)
+                .await;
+        }
+    }
+
+    async fn on_issue_reopened(&self, repo: Repository, event: IssueReopenedEvent) {
+        if event.title.starts_with("[Contribute]") {
+            self.handle_contribute_issue(repo, event.id, &event.title, &event.body)
+                .await;
         }
     }
 }
