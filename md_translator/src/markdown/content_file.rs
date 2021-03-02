@@ -7,6 +7,7 @@ use urlencoding::encode;
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 struct Header {
     category: String,
+    #[serde(default)]
     tags: Vec<String>,
     #[serde(default)]
     aliases: Vec<String>,
@@ -15,6 +16,8 @@ struct Header {
 #[derive(Debug, Serialize)]
 pub struct SearchIndex {
     name: String,
+    #[serde(default)]
+    tags: Vec<String>,
     #[serde(default)]
     aliases: Vec<String>,
     content_for_search: String,
@@ -62,6 +65,7 @@ impl ContentFile {
             path: encode(&self.path),
             aliases: self.header.aliases.clone(),
             content_for_search,
+            tags: self.header.tags.clone(),
         }
     }
 
