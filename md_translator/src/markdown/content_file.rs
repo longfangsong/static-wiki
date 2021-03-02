@@ -20,6 +20,7 @@ pub struct SearchIndex {
     tags: Vec<String>,
     #[serde(default)]
     aliases: Vec<String>,
+    category: String,
     content_for_search: String,
     path: String,
 }
@@ -64,6 +65,7 @@ impl ContentFile {
             name,
             path: encode(&self.path),
             aliases: self.header.aliases.clone(),
+            category: self.header.category.clone(),
             content_for_search,
             tags: self.header.tags.clone(),
         }
