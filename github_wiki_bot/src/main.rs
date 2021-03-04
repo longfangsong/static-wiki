@@ -1,13 +1,18 @@
 use async_trait::async_trait;
-use baipiao_bot_rust::{Bot, Dispatcher, IssueCreatedEvent, IssueReopenedEvent, Repository};
+use baipiao_bot_rust::{
+    Bot, Dispatcher, IssueCreatedEvent, IssueReopenedEvent, Repository, RunningInfo,
+};
 use log::info;
 use octocrab::{models, params, Octocrab, OctocrabBuilder};
+use rand::rngs::OsRng;
+use rand::Rng;
 use simpler_git::{
     git2,
     git2::{Cred, Signature},
     GitHubRepository,
 };
-use std::{env, fs, fs::File, io::Write};
+use std::{env, fs, fs::File, io::Write, time::Duration};
+use tokio::time;
 
 struct StaticWikiBot {
     github_client: Octocrab,
@@ -113,11 +118,18 @@ impl StaticWikiBot {
             .unwrap();
     }
 
-    async fn handle_contribute_issue(&self, repo: Repository, id: usize, title: &str, body: &str) {
+    async fn handle_contribute_issue(
+        &self,
+        repo: &Repository,
+        id: usize,
+        title: &str,
+        body: &str,
+        locker_id: usize,
+    ) {
         info!("Contribute issue created with title {}", title);
         let title = title.strip_prefix("[Contribute] ").unwrap();
         let content_start = body.find("---").unwrap();
-        let mut meta = body[..content_start].split("\n").map(|it| it.trim());
+        let mut meta = body[..content_start].split('\n').map(|it| it.trim());
         let language = meta
             .clone()
             .find(|it| it.starts_with("language:"))
@@ -128,6 +140,7 @@ impl StaticWikiBot {
             .map(|it| it.trim_start_matches("answer:").trim())
             .unwrap();
         let content = &body[content_start..];
+        self.acquire_lock_with_issue(&repo, locker_id).await;
         self.save_file_and_push(
             &repo,
             "main",
@@ -140,22 +153,90 @@ impl StaticWikiBot {
         info!("File saved and pushed {}", title);
         self.comment(&repo, id, "Merged").await;
         self.close_issue(&repo, id).await;
+        // we won't unlock here, build site action will do the unlock job
+    }
+
+    async fn acquire_lock_with_issue(&self, repo: &Repository, locker_id: usize) {
+        loop {
+            let current_holder = self.current_lock_holder(repo).await;
+            match current_holder {
+                None => {
+                    info!("Seems no body is holding the lock, try to acquire it...");
+                    self.github_client
+                        .issues(&repo.owner, &repo.name)
+                        .update(1)
+                        .body(&format!("{}", locker_id))
+                        .send()
+                        .await
+                        .map_err(|_| info!("Error raised by GitHub, retry ..."));
+                }
+                Some(x) if x == locker_id => {
+                    info!("Seems I got the lock successfully, waiting for any possible concurrent running locker...");
+                    time::sleep(Duration::from_secs(10)).await;
+                    let current_holder_after_wait = self.current_lock_holder(&repo).await;
+                    match current_holder_after_wait {
+                        Some(x) if x == locker_id => {
+                            info!("I still have the lock! Acquire success!");
+                            break;
+                        }
+                        _ => info!("I lost the lock TAT, I'll retry ..."),
+                    }
+                }
+                Some(current_holder) => {
+                    info!("Blocked by {}, wait and retry ...", current_holder);
+                    time::sleep(Duration::from_secs(10)).await;
+                    time::sleep(Duration::from_millis(OsRng.gen_range(0..10000))).await;
+                }
+            }
+        }
+    }
+
+    async fn current_lock_holder(&self, repo: &Repository) -> Option<usize> {
+        self.github_client
+            .issues(&repo.owner, &repo.name)
+            .get(1)
+            .await
+            .unwrap()
+            .body
+            .and_then(|holder| usize::from_str_radix(&holder, 10).ok())
     }
 }
 
 #[async_trait]
 impl Bot for StaticWikiBot {
-    async fn on_issue_created(&self, repo: Repository, event: IssueCreatedEvent) {
+    async fn on_issue_created(
+        &self,
+        repo: Repository,
+        running_info: RunningInfo,
+        event: IssueCreatedEvent,
+    ) {
         if event.title.starts_with("[Contribute]") {
-            self.handle_contribute_issue(repo, event.id, &event.title, &event.body)
-                .await;
+            self.handle_contribute_issue(
+                &repo,
+                event.id,
+                &event.title,
+                &event.body,
+                running_info.run_id,
+            )
+            .await;
         }
     }
 
-    async fn on_issue_reopened(&self, repo: Repository, event: IssueReopenedEvent) {
+    async fn on_issue_reopened(
+        &self,
+        repo: Repository,
+        running_info: RunningInfo,
+        event: IssueReopenedEvent,
+    ) {
         if event.title.starts_with("[Contribute]") {
-            self.handle_contribute_issue(repo, event.id, &event.title, &event.body)
-                .await;
+            self.handle_contribute_issue(
+                &repo,
+                event.id,
+                &event.title,
+                &event.body,
+                running_info.run_id,
+            )
+            .await;
         }
     }
 }
