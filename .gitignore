@@ -1,4 +1,4 @@
 /target
 .idea
-/output
 Cargo.lock
+output

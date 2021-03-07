@@ -9,5 +9,6 @@ edition = "2018"
 [workspace]
 members = [
     "md_translator",
-    "github_wiki_bot"
+    "github_wiki_bot",
+    "site_generator"
 ]

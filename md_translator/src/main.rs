@@ -44,7 +44,7 @@ where
             destination_path.set_extension("htmlpart");
             let input_file = fs::File::open(&path).unwrap();
             let mut output_file = fs::File::create(destination_path).unwrap();
-            if entry.file_name() == "index.md" {
+            if entry.file_name() == "about.md" {
                 let markdown =
                     IndexFile::from_file(input_file, relative_path.to_str().unwrap()).unwrap();
                 output_file.write_all(markdown.html().as_bytes()).unwrap();
