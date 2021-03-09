@@ -11,6 +11,7 @@ use simpler_git::{
     git2::{Cred, Signature},
     GitHubRepository,
 };
+use std::path::Path;
 use std::{env, fs, fs::File, io::Write, time::Duration};
 use tokio::time;
 
@@ -61,6 +62,19 @@ impl StaticWikiBot {
             repo_info.name, language, answer
         ))
         .unwrap();
+
+        let filename = if Path::new(&format!(
+            "./{}/data/{}/{}/{}",
+            repo_info.name, language, answer, filename
+        ))
+        .exists()
+        {
+            let digest = md5::compute(content);
+            format!("{}-{:?}.md", filename.trim_end_matches(".md"), digest)
+        } else {
+            filename.to_string()
+        };
+
         let mut file = File::create(format!(
             "./{}/data/{}/{}/{}",
             repo_info.name, language, answer, filename
