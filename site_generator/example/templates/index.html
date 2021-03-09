@@ -23,7 +23,7 @@
         </div>
         <div class="MuiCardActions-root MuiCardActions-spacing">
             <button class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedSizeSmall MuiButton-sizeSmall MuiButton-disableElevation"
-                    tabindex="0" type="button">
+                    tabindex="0" type="button" id="do-you-know-what-button">
                 <span class="MuiButton-label">{{ language_site.translation.find_result_here }}</span>
                 <span class="MuiTouchRipple-root"></span>
             </button>
@@ -35,11 +35,12 @@
                 {{ language_site.translation.do_you_know_question }}
             </p>
             <p class="MuiTypography-root MuiTypography-body1">{{ language_site.translation.do_you_know_how_to }}</p>
-            <h2 class="MuiTypography-root MuiTypography-h5"><!-- js will fill this --></h2>
+            <h2 class="MuiTypography-root MuiTypography-h5" id="do-you-know-how"><!-- js will fill this --></h2>
         </div>
         <div class="MuiCardActions-root MuiCardActions-spacing">
             <button class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedSizeSmall MuiButton-sizeSmall MuiButton-disableElevation"
-                    tabindex="0" type="button">
+                    tabindex="0" type="button"
+                    id="do-you-know-how-button">
                 <span class="MuiButton-label">{{ language_site.translation.find_result_here }}</span>
                 <span class="MuiTouchRipple-root"></span>
             </button>
@@ -51,21 +52,20 @@
                 {{ language_site.translation.do_you_know_question }}
             </p>
             <p class="MuiTypography-root MuiTypography-body1">{{ language_site.translation.do_you_know_why }}</p>
-            <h2 class="MuiTypography-root MuiTypography-h5">
+            <h2 class="MuiTypography-root MuiTypography-h5" id="do-you-know-why">
                 <!-- js will fill this -->
             </h2>
         </div>
         <div class="MuiCardActions-root MuiCardActions-spacing">
             <button class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedSizeSmall MuiButton-sizeSmall MuiButton-disableElevation"
-                    tabindex="0" type="button">
+                    tabindex="0" type="button"
+                    id="do-you-know-why-button">
                 <span class="MuiButton-label">{{ language_site.translation.find_result_here }}</span>
                 <span class="MuiTouchRipple-root"></span>
             </button>
         </div>
     </div>
+    <script src="{{ site.public_url }}/static/index.js"></script>
     {{ table_macro::table(section=language_site.sections["what"]) }}
-    <script>
-        var site_index = {{ site_index | json_encode() | safe }};
-    </script>
 </div>
 {% endblock content %}

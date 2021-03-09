@@ -12,7 +12,7 @@ pub struct Renderer {
 
 impl Renderer {
     pub fn load_from_path(templates: &str) -> Self {
-        let mut tera = match Tera::new(templates) {
+        let mut tera = match Tera::new(templates.trim_start_matches("./")) {
             Ok(t) => t,
             Err(e) => {
                 panic!("Parsing error(s): {}", e);
@@ -33,7 +33,7 @@ impl Renderer {
     }
 
     fn render_article(&self, context: &Context, article: &Article, path: impl AsRef<Path>) {
-        let mut path = path.as_ref().join(&article.name);
+        let mut path = path.as_ref().join(&article.filename);
         path.set_extension("html");
         self.render_page(context, &article.content, path);
     }

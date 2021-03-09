@@ -18,6 +18,7 @@ pub struct ArticleMeta {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Article {
+    section: String,
     // filename may different with name, that's why we need disambiguation
     pub filename: String,
     pub name: String,
@@ -29,8 +30,9 @@ pub struct Article {
 }
 
 impl Article {
-    pub fn new(filename: String, content: Markdown, meta: ArticleMeta) -> Self {
+    pub fn new(filename: String, content: Markdown, meta: ArticleMeta, section: String) -> Self {
         Self {
+            section,
             filename,
             summary: content.summary(),
             name: content.name(),
@@ -39,7 +41,7 @@ impl Article {
         }
     }
 
-    pub fn load(entry: DirEntry) -> Self {
+    pub fn load(entry: DirEntry, section: String) -> Self {
         let filename = entry
             .file_name()
             .into_string()
@@ -51,9 +53,10 @@ impl Article {
         file.read_to_string(&mut content).unwrap();
         let mut iter = content.split("---");
         iter.next();
-        let meta = serde_yaml::from_str(iter.next().unwrap()).unwrap();
+        let meta_str = iter.next().unwrap();
+        let meta = serde_yaml::from_str(meta_str).unwrap();
         let content = Markdown::new(iter.next().unwrap());
-        Self::new(filename, content, meta)
+        Self::new(filename, content, meta, section)
     }
 }
 
@@ -65,24 +68,22 @@ pub struct Section {
 
 impl Section {
     pub fn load(dir: DirEntry) -> Self {
+        let name = dir
+            .path()
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
         let articles = fs::read_dir(dir.path())
             .unwrap()
             .filter_map(|it| match it {
                 Ok(it) if it.path().extension().unwrap() == "md" => Some(it),
                 _ => None,
             })
-            .map(Article::load)
+            .map(|it| Article::load(it, name.clone()))
             .collect();
-        Self {
-            name: dir
-                .path()
-                .file_name()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .to_string(),
-            articles,
-        }
+        Self { name, articles }
     }
 }
 
@@ -97,6 +98,10 @@ pub struct LanguageSite {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ArticleSearchIndex {
+    #[serde(default)]
+    section: String,
+    #[serde(default)]
+    category: String,
     #[serde(default)]
     tags: Vec<String>,
     #[serde(default)]
@@ -127,6 +132,8 @@ pub enum SearchIndex {
 impl Into<ArticleSearchIndex> for Article {
     fn into(self) -> ArticleSearchIndex {
         ArticleSearchIndex {
+            section: self.section,
+            category: self.metadata.category,
             tags: self.metadata.tags,
             aliases: self.metadata.aliases,
             summary: self.summary,
@@ -178,13 +185,13 @@ impl LanguageSite {
         for article in articles {
             result
                 .entry(article.name.clone())
-                .or_insert(vec![])
+                .or_insert_with(Vec::new)
                 .push(article.clone())
         }
         result
     }
 
-    fn collect_disambiguation(sections: &Vec<Section>) -> HashMap<String, Vec<Article>> {
+    fn collect_disambiguation(sections: &[Section]) -> HashMap<String, Vec<Article>> {
         Self::collect_name_articles_map(sections.iter().cloned())
             .iter()
             .filter(|(_, articles)| articles.len() > 1)
@@ -214,7 +221,7 @@ impl LanguageSite {
     }
 
     fn load(dir: fs::DirEntry) -> Self {
-        let sections_vec = fs::read_dir(dir.path())
+        let sections_vec: Vec<_> = fs::read_dir(dir.path())
             .unwrap()
             .filter_map(|it| it.ok())
             .filter(|it| it.metadata().unwrap().is_dir())

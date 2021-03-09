@@ -11,6 +11,11 @@
     {% block more_head %}{% endblock %}
     <meta name="google-site-verification" content="eIlbRaKM-jgH9zQg2VFwWY4H-027wQlW6K-TWdEvI1g">
     <title>{{ site.title }}</title>
+    <script>
+        const site_index = {{ site_index | json_encode() | safe }};
+        const $ = document.querySelector.bind(document);
+        const $$ = document.querySelectorAll.bind(document);
+    </script>
 </head>
 <body>
 <div id="root">
@@ -46,7 +51,7 @@
                         </svg>
                     </div>
                     <div class="MuiInputBase-root jss19"><input placeholder="Search…" type="text" aria-label="search"
-                                                                class="MuiInputBase-input jss20" value=""></div>
+                                                                class="MuiInputBase-input search-input" value=""></div>
                 </div>
                 <a class="MuiButtonBase-root MuiIconButton-root MuiIconButton-colorInherit" tabindex="0"
                    aria-disabled="false" href="https://github.com/longfangsong/tipedia"><span
@@ -88,7 +93,7 @@
                                 <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM7.5 18c-.83 0-1.5-.67-1.5-1.5S6.67 15 7.5 15s1.5.67 1.5 1.5S8.33 18 7.5 18zm0-9C6.67 9 6 8.33 6 7.5S6.67 6 7.5 6 9 6.67 9 7.5 8.33 9 7.5 9zm4.5 4.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4.5 4.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm0-9c-.83 0-1.5-.67-1.5-1.5S15.67 6 16.5 6s1.5.67 1.5 1.5S17.33 9 16.5 9z"></path>
                             </svg>
                         </div>
-                        <div class="MuiListItemText-root"><span
+                        <div class="MuiListItemText-root" id="random-page"><span
                                 class="MuiTypography-root MuiListItemText-primary MuiTypography-body1 MuiTypography-displayBlock">{{ language_site.translation.random }}</span>
                         </div>
                         <span class="MuiTouchRipple-root"></span>
@@ -155,9 +160,8 @@
             </div>
         </div>
         <main class="jss6">
-            <div class="MuiBackdrop-root jss10" aria-hidden="true" style="opacity: 0; visibility: hidden;">
-                <ul class="MuiList-root table-itemname MuiList-padding">
-                    <li class="MuiListItem-root jss27 MuiListItem-gutters">无结果</li>
+            <div class="MuiBackdrop-root search-container" aria-hidden="true" style="opacity: 0; visibility: hidden;">
+                <ul class="MuiList-root table-itemname MuiList-padding" id="search-result">
                 </ul>
             </div>
             <div class="jss5"></div>
@@ -181,6 +185,9 @@
         </ul>
     </div>
     <div tabindex="0" data-test="sentinelEnd"></div>
+    <script src="{{ site.public_url }}/static/random_page.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6"></script>
+    <script src="{{ site.public_url }}/static/search.js"></script>
 </div>
 </body>
 </html>

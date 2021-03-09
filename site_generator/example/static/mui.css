@@ -1756,7 +1756,7 @@ label[data-shrink=false] + .MuiInputBase-formControl .MuiInputBase-input:focus::
     color: inherit;
 }
 
-.jss20 {
+.search-input {
     width: 100%;
     padding: 8px 8px 8px 0px;
     transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
@@ -1764,11 +1764,11 @@ label[data-shrink=false] + .MuiInputBase-formControl .MuiInputBase-input:focus::
 }
 
 @media (min-width: 600px) {
-    .jss20 {
+    .search-input {
         width: 12ch;
     }
 
-    .jss20:focus {
+    .search-input:focus {
         width: 20ch;
     }
 }
@@ -1867,7 +1867,7 @@ label[data-shrink=false] + .MuiInputBase-formControl .MuiInputBase-input:focus::
     height: 240px;
 }
 
-.jss10 {
+.search-container {
     color: white;
     z-index: 1199;
 }

@@ -5,7 +5,7 @@ tags: []
 ---
 # Protected Rollback
 
-在引入了 [Collapse Rollback](https://longfangsong.github.io/tipedia/#/prerendered/what%2FCollapse%20Rollback.htmlpart) 和悲观事务后，某个事务的 primary key 上的 rollback 记录可能会被 collapse 掉了，造成这个事务的 secondary keys 被意外提交。
+在引入了 [Collapse Rollback](/zh/what/Collapse%2FRollback.html) 和悲观事务后，某个事务的 primary key 上的 rollback 记录可能会被 collapse 掉了，造成这个事务的 secondary keys 被意外提交。
 
 为了避免这个情况，我们把这些悲观事务的 primary key 上的 rollback 记录标记为 protected，不 collapse 他们。
 
