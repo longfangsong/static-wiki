@@ -79,12 +79,29 @@ impl Renderer {
         fs::create_dir_all(path.as_ref()).unwrap();
         let mut context = Context::new();
         context.insert("site", &site);
-        for (_, language_site) in site.language_sites {
+        for (_, language_site) in site.language_sites.iter() {
             self.render_language_site(
                 &mut context,
                 &language_site,
                 path.as_ref().join(&language_site.language),
             );
         }
+        let mut index = File::create(path.as_ref().join("index.html")).unwrap();
+        let primary_language = site.language_sites.keys().next().unwrap();
+        write!(
+            index,
+            r#"<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Redirecting to {}/{}/index.html</title>
+<meta http-equiv="refresh" content="0; URL={}/{}/index.html">
+<link rel="canonical" href="{}/{}/index.html">"#,
+            site.config.public_url,
+            primary_language,
+            site.config.public_url,
+            primary_language,
+            site.config.public_url,
+            primary_language
+        )
+        .unwrap();
     }
 }
