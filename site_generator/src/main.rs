@@ -88,6 +88,8 @@ fn copy_static(static_path: impl AsRef<Path>, output_base_path: impl AsRef<Path>
         .map(|entry| match entry {
             Ok(path) => {
                 let command = Command::new("tsc")
+                    .arg("--target")
+                    .arg("es5")
                     .arg(&path.file_name().unwrap().to_str().unwrap())
                     .current_dir(output_base_path.as_ref().join("static"))
                     .spawn()

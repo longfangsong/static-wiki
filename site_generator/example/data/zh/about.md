@@ -106,7 +106,7 @@ Unofficial 的优势如下：
 
 告诉你想要做到一件事应该怎么去做，比如“**如何**给 TiDB 添加一个内存表”，“**如何**打印 TiDB/TiKV 间交换的数据”。把如何做这些事手册化之后，contribution 的门槛就非常低了。（比如我把“如何给 TiDB 添加一个内存表”写好之后，在做 TiDB Transaction related views 的时候，我准备好数据源，然后开一个 issue，就可以直接把加表的任务甩给外部 contributor 做）
 
-### Why
+### Why(WIP)
 
 解释一些设计上的选择的原因，比如 “**为啥** `statements_summary` 和 `statements_summary_history` 要分成两张表”
 
@@ -143,7 +143,7 @@ Unofficial 的优势如下：
 ---
 category: 词条类型，比如 concept, component, config-item 等等
 aliases: [] 词条的别称和简称
-tags: [] 任意 tag 比如 TiDB, TiKV, txn 都是很好的tag
+tags: [] 任意 tag 比如 TiDB, TiKV, sig/txn 都是很好的tag
 ---
 # 词条名
 
