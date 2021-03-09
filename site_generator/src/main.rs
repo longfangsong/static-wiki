@@ -55,9 +55,24 @@ fn copy_static(static_path: impl AsRef<Path>, output_base_path: impl AsRef<Path>
         ..Default::default()
     };
     dir::copy(
-        static_path,
-        output_base_path.as_ref().join("static"),
+        &static_path,
+        &output_base_path.as_ref().join("static"),
         &options,
+    )
+    .unwrap();
+    fs::copy(
+        &output_base_path
+            .as_ref()
+            .join("static")
+            .join("manifest.json"),
+        &output_base_path.as_ref().join("manifest.json"),
+    )
+    .unwrap();
+    fs::remove_file(
+        &output_base_path
+            .as_ref()
+            .join("static")
+            .join("manifest.json"),
     )
     .unwrap();
     let pattern = output_base_path
@@ -68,17 +83,24 @@ fn copy_static(static_path: impl AsRef<Path>, output_base_path: impl AsRef<Path>
         .trim_end_matches('/')
         .to_string()
         + "/*.ts";
-    for entry in glob::glob(&pattern).expect("Failed to read glob pattern") {
-        match entry {
+    let subprocesses = glob::glob(&pattern)
+        .expect("Failed to read glob pattern")
+        .map(|entry| match entry {
             Ok(path) => {
-                Command::new("tsc")
-                    .arg(path.file_name().unwrap().to_str().unwrap())
+                let command = Command::new("tsc")
+                    .arg(&path.file_name().unwrap().to_str().unwrap())
                     .current_dir(output_base_path.as_ref().join("static"))
-                    .output()
+                    .spawn()
                     .expect("failed to execute process");
-                fs::remove_file(path).unwrap()
+                (command, path)
             }
-            Err(e) => println!("{:?}", e),
-        }
+            Err(e) => {
+                panic!("{:?}", e)
+            }
+        })
+        .collect::<Vec<_>>();
+    for (mut subprocess, path) in subprocesses {
+        subprocess.wait().unwrap();
+        fs::remove_file(path).unwrap();
     }
 }

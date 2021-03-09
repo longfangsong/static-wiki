@@ -87,7 +87,11 @@ impl Renderer {
             );
         }
         let mut index = File::create(path.as_ref().join("index.html")).unwrap();
-        let primary_language = site.language_sites.keys().next().unwrap();
+        let primary_language = if site.language_sites.contains_key("zh") {
+            "zh"
+        } else {
+            site.language_sites.keys().next().unwrap()
+        };
         write!(
             index,
             r#"<!DOCTYPE html>
