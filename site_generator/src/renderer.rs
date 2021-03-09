@@ -68,6 +68,11 @@ impl Renderer {
             context.insert("section", section);
             self.render_section(context, section, path.as_ref().join(&section.name));
         }
+        self.render_page(
+            context,
+            &language_site.about,
+            path.as_ref().join("about.html"),
+        );
     }
     pub fn render_to(&self, site: Site, path: impl AsRef<Path>) {
         fs::remove_dir_all(path.as_ref()).unwrap_or(());

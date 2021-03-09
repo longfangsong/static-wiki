@@ -1879,3 +1879,9 @@ label[data-shrink=false] + .MuiInputBase-formControl .MuiInputBase-input:focus::
 a {
     cursor: pointer;
 }
+
+#search-result {
+    max-height: calc(100vh - 196px);
+    overflow: scroll;
+    margin-top: 64px;
+}
