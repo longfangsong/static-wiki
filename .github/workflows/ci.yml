@@ -2,17 +2,17 @@ name: Build & Release
 
 on: push
 jobs:
-  release-md-translator:
+  release-site-generator:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Build the Docker image
-        working-directory: ./md_translator
+        working-directory: ./site_generator
         run: |
-          docker build . -t md-translator
-          docker tag md-translator ${{ secrets.DOCKER_USERNAME }}/md-translator:latest
+          docker build . -t site_generator
+          docker tag site_generator ${{ secrets.DOCKER_USERNAME }}/site_generator:latest
           echo "${{ secrets.DOCKER_PASSWORD }}" | docker login --username "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-          docker push ${{ secrets.DOCKER_USERNAME }}/md-translator
+          docker push ${{ secrets.DOCKER_USERNAME }}/site_generator
 
   release-github-wiki-bot:
     runs-on: ubuntu-latest
