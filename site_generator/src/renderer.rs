@@ -1,11 +1,11 @@
 use crate::markdown::Markdown;
 use crate::model::{Article, DisambiguationSearchIndex, LanguageSite, SearchIndex, Section, Site};
+use log::info;
 use std::fs;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 use tera::{Context, Tera};
-
 pub struct Renderer {
     tera: Tera,
 }
@@ -73,11 +73,13 @@ impl Renderer {
         context.insert("article_count", &language_site.article_count());
         context.insert("site_index", &language_site.collect_search_indexes());
         self.render_language_index(context, path.as_ref().join("index.html"));
-        for (_, section) in &language_site.sections {
+        for (section_name, section) in &language_site.sections {
+            info!("render section {} ...", section_name);
             context.insert("section", section);
             self.render_section(context, section, path.as_ref().join(&section.name));
         }
         fs::create_dir_all(path.as_ref().join("disambiguation")).unwrap();
+        info!("render disambiguations ...");
         for disambiguation in language_site
             .collect_search_indexes()
             .iter()
@@ -96,6 +98,7 @@ impl Renderer {
             filepath.set_extension("html");
             self.render_disambiguation(context, disambiguation, filepath)
         }
+        info!("render about ...");
         self.render_page(
             context,
             &language_site.about,
@@ -107,7 +110,8 @@ impl Renderer {
         fs::create_dir_all(path.as_ref()).unwrap();
         let mut context = Context::new();
         context.insert("site", &site);
-        for (_, language_site) in site.language_sites.iter() {
+        for (language, language_site) in site.language_sites.iter() {
+            info!("Render {:?} site ...", language);
             self.render_language_site(
                 &mut context,
                 &language_site,

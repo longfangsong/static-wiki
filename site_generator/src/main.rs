@@ -1,11 +1,11 @@
 use crate::model::Site;
 use crate::renderer::Renderer;
 use fs_extra::dir;
+use log::info;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use structopt::StructOpt;
-
 mod markdown;
 mod model;
 mod renderer;
@@ -34,6 +34,7 @@ struct Opt {
 }
 
 fn main() {
+    env_logger::init();
     let opt: Opt = Opt::from_args();
     let template_path = opt
         .template
@@ -42,9 +43,16 @@ fn main() {
         .trim_end_matches('/')
         .to_string()
         + "/*";
+    info!("Loading templates from {} ...", template_path);
     let renderer = Renderer::load_from_path(&template_path);
+    info!("Loading data from {:?} ...", opt.input);
     let site = Site::load_from_path(opt.input);
+    info!("Render to {:?} ...", opt.output);
     renderer.render_to(site, &opt.output);
+    info!(
+        "Copy static from {:?} to {:?} ...",
+        opt.static_path, opt.output
+    );
     copy_static(opt.static_path, opt.output);
 }
 
