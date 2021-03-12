@@ -1,5 +1,5 @@
 use crate::markdown::Markdown;
-use crate::model::{Article, LanguageSite, Section, Site};
+use crate::model::{Article, DisambiguationSearchIndex, LanguageSite, SearchIndex, Section, Site};
 use std::fs;
 use std::fs::File;
 use std::io::Write;
@@ -31,19 +31,28 @@ impl Renderer {
         let mut file = File::create(path).unwrap();
         write!(file, "{}", rendered).unwrap();
     }
-
+    fn render_disambiguation(
+        &self,
+        context: &mut Context,
+        disambiguation: &DisambiguationSearchIndex,
+        path: impl AsRef<Path>,
+    ) {
+        let mut context = context.clone();
+        context.insert("disambiguation", disambiguation);
+        let rendered = self.tera.render("disambiguation.html", &context).unwrap();
+        let mut file = File::create(path).unwrap();
+        write!(file, "{}", rendered).unwrap();
+    }
     fn render_article(&self, context: &Context, article: &Article, path: impl AsRef<Path>) {
         let mut path = path.as_ref().join(&article.filename);
         path.set_extension("html");
         self.render_page(context, &article.content, path);
     }
-
     fn render_language_index(&self, context: &mut Context, path: impl AsRef<Path>) {
         let index = self.tera.render("index.html", &context).unwrap();
         let mut index_file = File::create(path.as_ref()).unwrap();
         write!(index_file, "{}", index).unwrap();
     }
-
     fn render_section(&self, context: &mut Context, section: &Section, path: impl AsRef<Path>) {
         fs::create_dir_all(&path).unwrap();
         let index = self.tera.render("subindex.html", &context).unwrap();
@@ -67,6 +76,25 @@ impl Renderer {
         for (_, section) in &language_site.sections {
             context.insert("section", section);
             self.render_section(context, section, path.as_ref().join(&section.name));
+        }
+        fs::create_dir_all(path.as_ref().join("disambiguation")).unwrap();
+        for disambiguation in language_site
+            .collect_search_indexes()
+            .iter()
+            .filter_map(|it| {
+                if let SearchIndex::Disambiguation(it) = it {
+                    Some(it)
+                } else {
+                    None
+                }
+            })
+        {
+            let mut filepath = path
+                .as_ref()
+                .join("disambiguation")
+                .join(&disambiguation.name);
+            filepath.set_extension("html");
+            self.render_disambiguation(context, disambiguation, filepath)
         }
         self.render_page(
             context,

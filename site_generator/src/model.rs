@@ -117,9 +117,9 @@ pub struct ArticleSearchIndex {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct DisambiguationSearchIndex {
     #[serde(default)]
-    name: String,
+    pub name: String,
     #[serde(default)]
-    articles: Vec<ArticleSearchIndex>,
+    pub articles: Vec<ArticleSearchIndex>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, From)]
