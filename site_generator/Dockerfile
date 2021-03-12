@@ -1,7 +1,12 @@
 FROM rust:alpine AS builder
 RUN apk add --no-cache musl-dev
-COPY . /site_generator
+# If we are lucky enough, these will build the dependencies and cache the git layer
+COPY ./Cargo.toml /site_generator/
+RUN mkdir /site_generator/src && echo "fn main() {}" > /site_generator/src/main.rs
 WORKDIR /site_generator
+RUN cargo build --release
+# Do the real build
+COPY ./* /site_generator/
 RUN cargo build --release
 
 FROM alpine
