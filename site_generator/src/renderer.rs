@@ -1,11 +1,14 @@
-use crate::markdown::Markdown;
-use crate::model::{Article, DisambiguationSearchIndex, LanguageSite, SearchIndex, Section, Site};
-use log::info;
 use std::fs;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
+
+use log::info;
 use tera::{Context, Tera};
+
+use crate::markdown::Markdown;
+use crate::model::*;
+
 pub struct Renderer {
     tera: Tera,
 }
@@ -47,7 +50,17 @@ impl Renderer {
     fn render_article(&self, context: &Context, article: &Article, path: impl AsRef<Path>) {
         let mut path = path.as_ref().join(&article.filename);
         path.set_extension("html");
-        self.render_page(context, &article.content, path);
+        let mut context = context.clone();
+        context.insert("article", &article);
+        context.insert("name", &article.content.name());
+        context.insert("content", &article.content.html());
+        context.insert(
+            "content_without_title",
+            &article.content.content_without_title(),
+        );
+        let rendered = self.tera.render("article.html", &context).unwrap();
+        let mut file = File::create(path).unwrap();
+        write!(file, "{}", rendered).unwrap();
     }
     fn render_sitemap(&self, context: &mut Context, path: impl AsRef<Path>) {
         let sitemap = self.tera.render("sitemap.xml", &context).unwrap();

@@ -44,6 +44,9 @@ impl Markdown {
         html::push_html(&mut html_output, self.parser());
         html_output
     }
+    pub fn content_without_title(&self) -> String {
+        self.html().splitn(2, "</h1>").nth(1).unwrap().to_string()
+    }
     pub fn summary(&self) -> String {
         let mut started = false;
         let mut result = String::new();
