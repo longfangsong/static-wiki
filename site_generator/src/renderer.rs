@@ -48,6 +48,11 @@ impl Renderer {
         path.set_extension("html");
         self.render_page(context, &article.content, path);
     }
+    fn render_sitemap(&self, context: &mut Context, path: impl AsRef<Path>) {
+        let sitemap = self.tera.render("sitemap.xml", &context).unwrap();
+        let mut sitemap_file = File::create(path.as_ref()).unwrap();
+        write!(sitemap_file, "{}", sitemap).unwrap();
+    }
     fn render_language_index(&self, context: &mut Context, path: impl AsRef<Path>) {
         let index = self.tera.render("index.html", &context).unwrap();
         let mut index_file = File::create(path.as_ref()).unwrap();
@@ -72,6 +77,15 @@ impl Renderer {
         context.insert("language_site", &language_site);
         context.insert("article_count", &language_site.article_count());
         context.insert("site_index", &language_site.collect_search_indexes());
+        context.insert("now", &chrono::Utc::now());
+        let articles: Vec<_> = language_site
+            .sections
+            .values()
+            .map(|section| section.articles.iter())
+            .flatten()
+            .collect();
+        context.insert("articles", &articles);
+        self.render_sitemap(context, path.as_ref().join("sitemap.xml"));
         self.render_language_index(context, path.as_ref().join("index.html"));
         for (section_name, section) in &language_site.sections {
             info!("render section {} ...", section_name);
