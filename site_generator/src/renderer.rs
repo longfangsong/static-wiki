@@ -26,6 +26,7 @@ impl Renderer {
 impl Renderer {
     fn render_page(&self, context: &Context, markdown: &Markdown, path: impl AsRef<Path>) {
         let mut context = context.clone();
+        context.insert("name", &markdown.name());
         context.insert("content", &markdown.html());
         let rendered = self.tera.render("page.html", &context).unwrap();
         let mut file = File::create(path).unwrap();
