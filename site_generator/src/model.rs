@@ -1,4 +1,5 @@
 use crate::markdown::Markdown;
+use chrono::Utc;
 use derive_more::From;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -7,6 +8,7 @@ use std::fs::{DirEntry, File};
 use std::io::Read;
 use std::iter::Iterator;
 use std::path::Path;
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ArticleMeta {
     category: String,
@@ -14,6 +16,10 @@ pub struct ArticleMeta {
     tags: Vec<String>,
     #[serde(default)]
     aliases: Vec<String>,
+    #[serde(default)]
+    author: Option<String>,
+    #[serde(default)]
+    last_update: Option<chrono::DateTime<Utc>>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

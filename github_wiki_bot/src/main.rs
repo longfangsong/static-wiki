@@ -132,12 +132,26 @@ impl StaticWikiBot {
             .unwrap();
     }
 
+    fn update_file_contents(content: &str, author: &str) -> String {
+        let mut splitted = content.split("---");
+        let nothing = splitted.next();
+        assert_eq!(nothing, Some(""));
+        let mut meta = splitted.next().unwrap().to_string();
+        meta += &format!("author: {}", author);
+        let now = chrono::Utc::now();
+        meta += &serde_yaml::to_string(&now).unwrap();
+        let content = splitted.next().unwrap();
+        assert_eq!(splitted.next(), None);
+        format!("---\n{}---\n{}", meta, content)
+    }
+
     async fn handle_contribute_issue(
         &self,
         repo: &Repository,
         id: usize,
         title: &str,
         body: &str,
+        author: &str,
         locker_id: usize,
     ) {
         info!("Contribute issue created with title {}", title);
@@ -155,17 +169,19 @@ impl StaticWikiBot {
             .unwrap();
         let content = &body[content_start..];
         self.acquire_lock_with_issue(&repo, locker_id).await;
+        let content = Self::update_file_contents(content, author);
         self.save_file_and_push(
             &repo,
             "main",
             language,
             answer,
             &format!("{}.md", title),
-            content,
+            &content,
         )
         .unwrap();
         info!("File saved and pushed {}", title);
-        self.comment(&repo, id, "Merged").await;
+        self.comment(&repo, id, "Merged. Thank you for contribution!")
+            .await;
         self.close_issue(&repo, id).await;
         // we won't unlock here, build site action will do the unlock job
     }
@@ -230,6 +246,7 @@ impl Bot for StaticWikiBot {
                 event.id,
                 &event.title,
                 &event.body,
+                &event.user,
                 running_info.run_id,
             )
             .await;
@@ -248,6 +265,7 @@ impl Bot for StaticWikiBot {
                 event.id,
                 &event.title,
                 &event.body,
+                &event.user,
                 running_info.run_id,
             )
             .await;
