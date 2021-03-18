@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use baipiao_bot_rust::{
     Bot, Dispatcher, IssueCreatedEvent, IssueReopenedEvent, Repository, RunningInfo,
 };
+use chrono::SecondsFormat;
 use log::info;
 use octocrab::{models, params, Octocrab, OctocrabBuilder};
 use rand::rngs::OsRng;
@@ -138,7 +139,11 @@ impl StaticWikiBot {
         assert_eq!(nothing, Some(""));
         let mut meta = splitted.next().unwrap().to_string();
         let now = chrono::Utc::now();
-        meta += &format!("author: {}\nlast_updated: {}", author, now.to_rfc3339());
+        meta += &format!(
+            "author: {}\nlast_update: {}\n",
+            author,
+            now.to_rfc3339_opts(SecondsFormat::Secs, true)
+        );
         let content = splitted.next().unwrap();
         assert_eq!(splitted.next(), None);
         format!("---\n{}---\n{}", meta, content)
