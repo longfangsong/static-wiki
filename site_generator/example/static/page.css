@@ -26,3 +26,11 @@
     margin-left: 4px;
     padding-left: 4px;
 }
+
+.last-edited {
+    color: grey;
+}
+
+h1 {
+    margin-bottom: 0;
+}

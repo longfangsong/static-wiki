@@ -137,9 +137,8 @@ impl StaticWikiBot {
         let nothing = splitted.next();
         assert_eq!(nothing, Some(""));
         let mut meta = splitted.next().unwrap().to_string();
-        meta += &format!("author: {}", author);
         let now = chrono::Utc::now();
-        meta += &serde_yaml::to_string(&now).unwrap();
+        meta += &format!("author: {}\nlast_updated: {}", author, now.to_rfc3339());
         let content = splitted.next().unwrap();
         assert_eq!(splitted.next(), None);
         format!("---\n{}---\n{}", meta, content)

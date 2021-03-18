@@ -314,7 +314,7 @@ interface ArticleArraySearchIndex {
 type SearchIndex = SingleArticleSearchIndex | ArticleArraySearchIndex;
 
 function isSingle(index: SearchIndex): index is SingleArticleSearchIndex {
-    return index.hasOwnProperty("section") !== undefined
+    return index.hasOwnProperty("section")
 }
 
 declare const site_index: Array<SearchIndex>;
@@ -352,6 +352,8 @@ window.addEventListener("load", () => {
             } else {
                 let html_str = "";
                 for (const item of result) {
+                    console.log(to_search);
+                    console.log(item, isSingle(item.item));
                     if (isSingle(item.item)) {
                         html_str += `
                 <a class="MuiButtonBase-root MuiListItem-root MuiListItem-gutters MuiListItem-button"
