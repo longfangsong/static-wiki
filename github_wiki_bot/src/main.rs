@@ -1,12 +1,14 @@
 use async_trait::async_trait;
 use baipiao_bot_rust::{
-    Bot, Dispatcher, IssueCreatedEvent, IssueReopenedEvent, Repository, RunningInfo,
+    Bot, Dispatcher, IssueCreatedEvent, IssueReopenedEvent, PullRequestCreatedEvent, Repository,
+    RunningInfo,
 };
 use chrono::SecondsFormat;
 use log::info;
 use octocrab::{models, params, Octocrab, OctocrabBuilder};
 use rand::rngs::OsRng;
 use rand::Rng;
+use regex::Regex;
 use simpler_git::{
     git2,
     git2::{Cred, Signature},
@@ -15,6 +17,20 @@ use simpler_git::{
 use std::path::Path;
 use std::{env, fs, fs::File, io::Write, time::Duration};
 use tokio::time;
+
+fn collect_changed_files(diff: &str) -> Vec<&str> {
+    let re = Regex::new(r"(\s*)diff --git a/(.+)").unwrap();
+    re.find_iter(diff)
+        .map(|m| {
+            m.as_str()
+                .splitn(3, ' ')
+                .last()
+                .unwrap()
+                .trim()
+                .trim_start_matches("diff --git ")
+        })
+        .collect()
+}
 
 struct StaticWikiBot {
     github_client: Octocrab,
@@ -234,6 +250,33 @@ impl StaticWikiBot {
             .body
             .and_then(|holder| usize::from_str_radix(&holder, 10).ok())
     }
+
+    async fn handle_contribute_pr(&self, repo: &Repository, id: usize, locker_id: usize) {
+        info!("Contribute pr created with id {}", id);
+        let diff = self
+            .github_client
+            .pulls(&repo.owner, &repo.name)
+            .get_patch(id as _)
+            .await
+            .unwrap();
+        info!("diff: {}", diff);
+        let changed_files = collect_changed_files(&diff);
+        println!("changed files: {:?}", changed_files);
+        let all_files_valid = collect_changed_files(&diff)
+            .iter()
+            .all(|it| it.starts_with("a/data") && it.ends_with(".md"));
+        if all_files_valid {
+            self.acquire_lock_with_issue(&repo, locker_id).await;
+            self.merge_pr(&repo, id).await;
+        } else {
+            self.comment(
+                repo,
+                id,
+                "Sorry I cannot make sure your PR is safe to merge.\n@longfangsong PTAL.",
+            )
+            .await;
+        }
+    }
 }
 
 #[async_trait]
@@ -274,6 +317,16 @@ impl Bot for StaticWikiBot {
             )
             .await;
         }
+    }
+
+    async fn on_pull_request_created(
+        &self,
+        repo: Repository,
+        running_info: RunningInfo,
+        event: PullRequestCreatedEvent,
+    ) {
+        self.handle_contribute_pr(&repo, event.id, running_info.run_id)
+            .await;
     }
 }
 

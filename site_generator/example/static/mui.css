@@ -1856,7 +1856,17 @@ label[data-shrink=false] + .MuiInputBase-formControl .MuiInputBase-input:focus::
 
 .search-container {
     color: white;
-    z-index: 1199
+    z-index: 1199;
+}
+
+.search-container.collapsed {
+    left: 60px;
+    top: 56px;
+}
+
+.search-container.expanded {
+    left: 240px;
+    top: 64px;
 }
 
 .MuiListItem-button {
