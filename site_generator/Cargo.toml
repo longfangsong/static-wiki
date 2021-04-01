@@ -11,7 +11,6 @@ tera = "1.6.1"
 serde = { version = "1.0.123", features = ["derive"] }
 lazy_static = "1.4.0"
 pulldown-cmark = "0.8.0"
-urlencoding = "1.1.1"
 serde_yaml = "0.8.17"
 toml = "0.5.8"
 fs_extra = "1.2.0"

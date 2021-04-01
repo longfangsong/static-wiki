@@ -195,7 +195,7 @@ impl StaticWikiBot {
             "main",
             language,
             answer,
-            &format!("{}.md", title.replace(".", "-")),
+            &format!("{}.md", title.replace(".", "-").replace("&", "%26")),
             &content,
         )
         .unwrap();
