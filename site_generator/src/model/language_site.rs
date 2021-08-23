@@ -1,11 +1,9 @@
-use crate::markdown::Markdown;
-use crate::model::{Article, ArticleSearchIndex, DisambiguationSearchIndex, SearchIndex, Section};
+use crate::{
+    markdown::Markdown,
+    model::{Article, ArticleSearchIndex, DisambiguationSearchIndex, SearchIndex, Section},
+};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::convert::TryFrom;
-use std::fs;
-use std::fs::File;
-use std::io::Read;
+use std::{collections::HashMap, convert::TryFrom, fs, fs::File, io::Read};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Disambiguation {
@@ -36,7 +34,7 @@ pub struct LanguageSite {
     pub language: String,
     pub sections: HashMap<String, Section>,
     pub disambiguation: Vec<Disambiguation>,
-    pub about: Markdown,
+    pub top_level_articles: Vec<Markdown>,
     pub translation: toml::Value,
 }
 
@@ -45,7 +43,7 @@ impl LanguageSite {
         language: String,
         sections_vec: Vec<Section>,
         disambiguation: Vec<Vec<Article>>,
-        about: Markdown,
+        top_level_articles: Vec<Markdown>,
         translation: toml::Value,
     ) -> Self {
         let mut sections = HashMap::new();
@@ -59,7 +57,7 @@ impl LanguageSite {
                 .into_iter()
                 .map(|x| Disambiguation::try_from(x).unwrap())
                 .collect(),
-            about,
+            top_level_articles,
             translation,
         }
     }
@@ -113,12 +111,28 @@ impl LanguageSite {
     pub(crate) fn load(dir: fs::DirEntry) -> Self {
         let sections_vec: Vec<_> = fs::read_dir(dir.path())
             .unwrap()
-            .filter_map(|it| it.ok())
+            .filter_map(Result::ok)
             .filter(|it| it.metadata().unwrap().is_dir())
             .map(Section::load)
             .collect();
+
+        let raw_files: Vec<_> = fs::read_dir(dir.path())
+            .unwrap()
+            .filter_map(Result::ok)
+            .filter_map(|d| {
+                d.path().to_str().and_then(|f| {
+                    if f.ends_with(".md") {
+                        Some(d.path())
+                    } else {
+                        None
+                    }
+                })
+            })
+            .map(Markdown::load_from_path)
+            .filter_map(Result::ok)
+            .collect();
+
         let disambiguation = Self::collect_disambiguation(&sections_vec);
-        let about_content = Markdown::load_from_path(dir.path().join("about.md")).unwrap();
         let mut translation_file = File::open(dir.path().join("translation.toml")).unwrap();
         let mut translation_content = String::new();
         translation_file
@@ -130,7 +144,7 @@ impl LanguageSite {
             dir.file_name().into_string().unwrap(),
             sections_vec,
             disambiguation,
-            about_content,
+            raw_files,
             translation,
         )
     }

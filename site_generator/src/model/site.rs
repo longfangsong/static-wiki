@@ -1,10 +1,6 @@
 use crate::model::LanguageSite;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::fs;
-use std::fs::File;
-use std::io::Read;
-use std::path::Path;
+use std::{collections::HashMap, fs, fs::File, io::Read, path::Path};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SiteConfig {

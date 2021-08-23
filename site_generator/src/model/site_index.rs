@@ -34,25 +34,26 @@ pub enum SearchIndex {
     Disambiguation(DisambiguationSearchIndex),
 }
 
-impl Into<DisambiguationSearchIndex> for Vec<Article> {
-    fn into(self) -> DisambiguationSearchIndex {
-        assert_ne!(self.len(), 0);
-        DisambiguationSearchIndex {
-            name: self[0].name.clone(),
-            articles: self.into_iter().map(Article::into).collect(),
+impl From<Vec<Article>> for DisambiguationSearchIndex {
+    fn from(articles: Vec<Article>) -> Self {
+        assert_ne!(articles.len(), 0);
+        Self {
+            name: articles[0].name.clone(),
+            articles: articles.into_iter().map(Article::into).collect(),
         }
     }
 }
-impl Into<ArticleSearchIndex> for Article {
-    fn into(self) -> ArticleSearchIndex {
-        ArticleSearchIndex {
-            section: self.section,
-            category: self.metadata.category,
-            tags: self.metadata.tags,
-            aliases: self.metadata.aliases,
-            summary: self.summary,
-            name: self.name,
-            filename: self.filename,
+
+impl From<Article> for ArticleSearchIndex {
+    fn from(article: Article) -> Self {
+        Self {
+            section: article.section,
+            category: article.metadata.category,
+            tags: article.metadata.tags,
+            aliases: article.metadata.aliases,
+            summary: article.summary,
+            name: article.name,
+            filename: article.content.filename,
         }
     }
 }

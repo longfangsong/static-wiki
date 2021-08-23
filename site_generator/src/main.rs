@@ -2,9 +2,11 @@ use crate::renderer::Renderer;
 use fs_extra::dir;
 use log::info;
 use model::Site;
-use std::fs;
-use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    process::Command,
+};
 use structopt::StructOpt;
 mod markdown;
 mod model;

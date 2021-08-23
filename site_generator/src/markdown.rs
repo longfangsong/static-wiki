@@ -1,10 +1,7 @@
 use lazy_static::lazy_static;
 use pulldown_cmark::{html, Event, Options, Parser, Tag};
 use serde::{Deserialize, Serialize};
-use std::fs::File;
-use std::io;
-use std::io::Read;
-use std::path::Path;
+use std::{fs::File, io, io::Read, path::Path};
 
 lazy_static! {
     static ref OPTIONS: Options = {
@@ -18,23 +15,23 @@ lazy_static! {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Markdown {
+    pub filename: String,
     content: String,
 }
 
 impl Markdown {
-    pub fn new(content: impl ToString) -> Self {
+    pub fn new(filename: impl ToString, content: impl ToString) -> Self {
         Self {
+            filename: filename.to_string(),
             content: content.to_string(),
         }
     }
     pub fn load_from_path(path: impl AsRef<Path>) -> io::Result<Self> {
-        let file = File::open(path.as_ref())?;
-        Ok(Self::load(file))
-    }
-    pub fn load(mut file: File) -> Self {
+        let filename = path.as_ref().file_stem().unwrap().to_str().unwrap();
+        let mut file = File::open(path.as_ref())?;
         let mut content = String::new();
         file.read_to_string(&mut content).unwrap();
-        Self::new(content)
+        Ok(Self::new(filename, content))
     }
     fn parser(&self) -> Parser {
         Parser::new_ext(&self.content, *OPTIONS)

@@ -1,13 +1,9 @@
-use std::fs;
-use std::fs::File;
-use std::io::Write;
-use std::path::Path;
+use std::{fs, fs::File, io::Write, path::Path};
 
 use log::info;
 use tera::{Context, Tera};
 
-use crate::markdown::Markdown;
-use crate::model::*;
+use crate::{markdown::Markdown, model::*};
 
 pub struct Renderer {
     tera: Tera,
@@ -48,7 +44,7 @@ impl Renderer {
         write!(file, "{}", rendered).unwrap();
     }
     fn render_article(&self, context: &Context, article: &Article, path: impl AsRef<Path>) {
-        let mut path = path.as_ref().join(&article.filename);
+        let mut path = path.as_ref().join(&article.content.filename);
         path.set_extension("html");
         let mut context = context.clone();
         context.insert("article", &article);
@@ -63,18 +59,18 @@ impl Renderer {
         write!(file, "{}", rendered).unwrap();
     }
     fn render_sitemap(&self, context: &mut Context, path: impl AsRef<Path>) {
-        let sitemap = self.tera.render("sitemap.xml", &context).unwrap();
+        let sitemap = self.tera.render("sitemap.xml", context).unwrap();
         let mut sitemap_file = File::create(path.as_ref()).unwrap();
         write!(sitemap_file, "{}", sitemap).unwrap();
     }
     fn render_language_index(&self, context: &mut Context, path: impl AsRef<Path>) {
-        let index = self.tera.render("index.html", &context).unwrap();
+        let index = self.tera.render("index.html", context).unwrap();
         let mut index_file = File::create(path.as_ref()).unwrap();
         write!(index_file, "{}", index).unwrap();
     }
     fn render_section(&self, context: &mut Context, section: &Section, path: impl AsRef<Path>) {
         fs::create_dir_all(&path).unwrap();
-        let index = self.tera.render("subindex.html", &context).unwrap();
+        let index = self.tera.render("subindex.html", context).unwrap();
         let mut file = File::create(path.as_ref().join("index.html")).unwrap();
         write!(file, "{}", index).unwrap();
         for article in &section.articles {
@@ -107,7 +103,7 @@ impl Renderer {
             self.render_section(context, section, path.as_ref().join(&section.name));
         }
         fs::create_dir_all(path.as_ref().join("disambiguation")).unwrap();
-        info!("render disambiguations ...");
+        info!("render disambiguation pages ...");
         for disambiguation in language_site
             .collect_search_indexes()
             .iter()
@@ -126,12 +122,14 @@ impl Renderer {
             filepath.set_extension("html");
             self.render_disambiguation(context, disambiguation, filepath)
         }
-        info!("render about ...");
-        self.render_page(
-            context,
-            &language_site.about,
-            path.as_ref().join("about.html"),
-        );
+        info!("render top level files ...");
+        for file in &language_site.top_level_articles {
+            self.render_page(
+                context,
+                file,
+                path.as_ref().join(format!("{}.html", file.filename)),
+            );
+        }
     }
     pub fn render_to(&self, site: Site, path: impl AsRef<Path>) {
         fs::remove_dir_all(path.as_ref()).unwrap_or(());
@@ -142,7 +140,7 @@ impl Renderer {
             info!("Render {:?} site ...", language);
             self.render_language_site(
                 &mut context,
-                &language_site,
+                language_site,
                 path.as_ref().join(&language_site.language),
             );
         }

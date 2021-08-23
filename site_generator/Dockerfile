@@ -5,7 +5,6 @@ WORKDIR /site_generator
 RUN cargo build --release
 
 FROM alpine
-MAINTAINER longfangsong@icloud.com
 RUN apk add npm && npm -g install typescript
 COPY --from=builder /site_generator/target/release/site_generator /
 WORKDIR /

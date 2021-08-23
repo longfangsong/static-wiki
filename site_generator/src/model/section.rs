@@ -1,7 +1,6 @@
 use crate::model::Article;
 use serde::{Deserialize, Serialize};
-use std::fs;
-use std::fs::DirEntry;
+use std::{fs, fs::DirEntry};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Section {

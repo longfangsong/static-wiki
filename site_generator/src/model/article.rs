@@ -1,7 +1,9 @@
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use std::fs::{DirEntry, File};
-use std::io::Read;
+use std::{
+    fs::{DirEntry, File},
+    io::Read,
+};
 
 use crate::markdown::Markdown;
 
@@ -22,20 +24,18 @@ pub struct ArticleMeta {
 pub struct Article {
     pub section: String,
     // filename may different with name, that's why we need disambiguation
-    pub filename: String,
     pub name: String,
     pub summary: String,
     #[serde(flatten)]
     pub metadata: ArticleMeta,
-    #[serde(skip_serializing)]
+    // #[serde(skip_serializing)]
     pub content: Markdown,
 }
 
 impl Article {
-    pub fn new(filename: String, content: Markdown, meta: ArticleMeta, section: String) -> Self {
+    pub fn new(content: Markdown, meta: ArticleMeta, section: String) -> Self {
         Self {
             section,
-            filename,
             summary: content.summary(),
             name: content.name(),
             content,
@@ -66,7 +66,7 @@ impl Article {
         iter.next();
         let meta_str = iter.next().unwrap();
         let meta = serde_yaml::from_str(meta_str).unwrap();
-        let content = Markdown::new(iter.next().unwrap());
-        Self::new(filename, content, meta, section)
+        let content = Markdown::new(filename, iter.next().unwrap());
+        Self::new(content, meta, section)
     }
 }
